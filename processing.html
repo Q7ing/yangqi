@@ -38,6 +38,22 @@
             }
             updateStatus();
         });
+
+        // 最终锁定脚本，防止后退
+        (function(window) {
+            window.addEventListener('load', function() {
+                history.pushState(null, '', location.href);
+                window.addEventListener('pageshow', function(event) {
+                    if (event.persisted) {
+                        document.body.style.display = 'none';
+                        location.reload();
+                    }
+                });
+                window.addEventListener('popstate', function(event) {
+                    history.pushState(null, '', location.href);
+                });
+            });
+        }(window));
     </script>
 </body>
 </html>
