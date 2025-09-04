@@ -4,80 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>人脸识别</title>
+    <link rel="stylesheet" href="style.css">
     <style>
         body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: #ffffff; 
-            color: #333333; 
-            overflow: hidden; 
-            /* 添加过渡效果，让闪烁停止时颜色变化更平滑 */
-            transition: background-color 0.5s ease;
+            background-color: white; /* Initial white background */
+            transition: background-color 0.5s ease-in-out;
         }
-
-        /* --- 新增：恢复背景闪烁动画 --- */
-        body.flashing-background {
-            animation: rainbow-flash 3s linear infinite;
+        .face-recognition-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: transparent; /* Let body handle the background */
         }
-
-        @keyframes rainbow-flash {
-            0%, 100% { background-color: #ff4d4d; } /* 赤 */
-            16%      { background-color: #ff9a4d; } /* 橙 */
-            32%      { background-color: #ffd74d; } /* 黄 */
-            48%      { background-color: #4dff88; } /* 绿 */
-            64%      { background-color: #4dc4ff; } /* 青 */
-            80%      { background-color: #6a4dff; } /* 蓝 */
-            94%      { background-color: #c04dff; } /* 紫 */
-        }
-        /* --- 动画代码结束 --- */
-
-        .face-recognition-page { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            width: 100vw; 
-            position: relative; 
-        }
-        
         .camera-view {
             position: relative;
-            width: 300px;
-            height: 300px;
+            width: 300px; /* Adjust as needed */
+            height: 300px; /* Adjust as needed */
+            border-radius: 50%;
             overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-color: #333; /* Dark background for the camera area */
         }
-
-        #camera-feed { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transform: scaleX(-1); 
+        #camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror the camera feed */
         }
-        
         .camera-mask {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
-            box-shadow: 0 0 0 2000px #ffffff;
-            border: 3px solid #333333;
-            box-sizing: border-box;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); /* Dark overlay outside the circle */
+            border-radius: 50%;
         }
-
-        .instruction-view { 
-            margin-top: 40px; 
-            padding: 15px 30px; 
-            background-color: rgba(0, 0, 0, 0.75); 
-            border-radius: 50px; 
-            font-size: 1.1em;
-            text-align: center; 
-            color: #ffffff;
+        .instruction-view {
+            margin-top: 20px;
+            font-size: 1.5em;
+            color: #333;
+            text-align: center;
+        }
+        /* Styles for flashing background */
+        .flash-bg-dark {
+            background-color: #1a1a1a; /* Darker shade */
+        }
+        .flash-bg-light {
+            background-color: #333333; /* Lighter dark shade */
         }
     </style>
 </head>
@@ -88,43 +63,66 @@
             <div class="camera-mask"></div>
         </div>
         <div class="instruction-view">
-            <p id="instruction" style="margin: 0;">请直视摄像头</p>
+            <p id="instruction">请将面部置于圆框中</p>
         </div>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const video = document.getElementById('camera-feed');
             const instructionText = document.getElementById('instruction');
-
-            function delay(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-            }
+            const body = document.body;
 
             async function startCamera() {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
                     video.srcObject = stream;
+                    
+                    // Initial white background for 2.5 seconds
+                    body.style.backgroundColor = 'white';
+                    instructionText.style.color = '#333'; // Ensure text is visible on white
+                    await new Promise(resolve => setTimeout(resolve, 2500)); 
+                    
+                    // After 2.5 seconds, change to a default dark background for the camera sequence
+                    body.style.backgroundColor = '#333'; 
+                    instructionText.style.color = 'white'; // Change text color for dark background
                     runVerificationSequence();
+
                 } catch (err) {
                     instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";
-                    document.body.style.backgroundColor = '#1a1a1a';
+                    instructionText.style.color = '#333'; // Keep text visible if camera fails
                 }
             }
 
+            function runTask(taskName, duration) {
+                return new Promise(resolve => {
+                    instructionText.textContent = taskName;
+                    setTimeout(resolve, duration * 1000);
+                });
+            }
+
+            async function flashBackground(duration) {
+                const startTime = Date.now();
+                while (Date.now() - startTime < duration * 1000) {
+                    body.classList.toggle('flash-bg-dark');
+                    body.classList.toggle('flash-bg-light');
+                    await new Promise(resolve => setTimeout(resolve, 100)); // Flash every 100ms
+                }
+                body.classList.remove('flash-bg-dark', 'flash-bg-light'); // Clean up classes
+                body.style.backgroundColor = '#333'; // Revert to a consistent dark background
+            }
+
             async function runVerificationSequence() {
-                instructionText.textContent = "请直视摄像头";
-                await delay(2000);
-
-                instructionText.textContent = "正在扫描，请保持不动...";
-
-                // --- 新增：在扫描开始时，为body添加class来触发闪烁 ---
-                document.body.classList.add('flashing-background');
+                const actions = ['请眨眨眼', '请直视摄像头']; // Updated actions
+                const shuffledActions = actions.sort(() => 0.5 - Math.random());
                 
-                // 扫描过程持续4秒
-                await delay(4000);
+                for (const task of shuffledActions) {
+                    let duration = Math.floor(Math.random() * 2) + 2; // Random 2-3 seconds for tasks
+                    await runTask(task, duration);
+                }
                 
-                // --- 新增：扫描结束后，移除class来停止闪烁 ---
-                document.body.classList.remove('flashing-background');
+                // Dark background fast flash for 4 seconds
+                instructionText.textContent = "正在进行生物识别...";
+                await flashBackground(4); 
                 
                 instructionText.textContent = "验证完成！";
                 
