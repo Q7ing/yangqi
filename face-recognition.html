@@ -58,44 +58,32 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #333;
+            background-color: #1a1a1a; /* 闪烁结束后的最终颜色 */
             
-            /* 关键：使用 mask 技术创建圆形镂空，兼容性好 */
+            /* 关键：使用 mask 技术创建圆形镂空 */
             mask: radial-gradient(circle at center, transparent 40vw, black 0);
-            /* 针对不同浏览器内核的兼容性写法 */
-            -webkit-mask: radial-gradient(circle at center, transparent 40vw, black 0); 
-            /* 限制镂空区域的最大尺寸 */
+            -webkit-mask: radial-gradient(circle at center, transparent 40vw, black 0);
+            
+            /* 限制镂空区域的最大尺寸，使其与 camera-view 对应 */
             -webkit-mask-size: 300px 300px;
             -webkit-mask-repeat: no-repeat;
             -webkit-mask-position: center;
 
             /* 初始时完全透明，不显示 */
             opacity: 0;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.5s ease, background-color 0.1s ease;
         }
         
-        /* 当遮罩层需要显示时，改变其不透明度 */
         .overlay.visible {
             opacity: 1;
         }
-        
-        /* 闪烁效果的动画 */
-        @keyframes flash {
-            0%, 100% { background-color: #1a1a1a; }
-            50% { background-color: #4a4a4a; }
-        }
-        
-        /* 将闪烁动画应用到遮罩层上 */
-        .overlay.flashing {
-            animation: flash 0.25s infinite;
-        }
 
         .instruction-view {
-            position: relative; /* 确保文字在最上层 */
+            position: relative;
             z-index: 10;
-            margin-top: 50vh; /* 将文字定位到圆圈下方 */
+            margin-top: 50vh;
             font-size: 1.2rem;
-            color: #333; /* 初始文字颜色，配合白色背景 */
+            color: #333; /* 初始文字颜色 */
             text-align: center;
             transition: color 0.5s ease;
         }
@@ -110,9 +98,7 @@
         <div class="camera-view">
             <video id="camera-feed" autoplay playsinline></video>
         </div>
-        
         <div class="overlay" id="overlay"></div>
-
         <div class="instruction-view">
             <p id="instruction">请将面部置于圆框中</p>
         </div>
@@ -124,14 +110,35 @@
             const instructionText = document.getElementById('instruction');
             const overlay = document.getElementById('overlay');
 
-            async function startCamera() {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-                    video.srcObject = stream;
-                    video.onplaying = runSequence; // 等待视频开始播放再执行流程
-                } catch (err) {
-                    instructionText.textContent = "无法访问摄像头，请检查权限。";
-                }
+            // 定义一组深色、不透明的彩色
+            const flashColors = [
+                '#B71C1C', // 深红
+                '#E65100', // 深橙
+                '#F57F17', // 深黄
+                '#1B5E20', // 深绿
+                '#0D47A1', // 深蓝
+                '#004D40', // 靛青 (用深蓝绿色代替)
+                '#4A148C'  // 深紫
+            ];
+
+            // 专门用于彩色闪烁的函数
+            function runColorFlash(duration) {
+                return new Promise(resolve => {
+                    const intervalId = setInterval(() => {
+                        // 随机从数组中挑选一个颜色
+                        const randomColor = flashColors[Math.floor(Math.random() * flashColors.length)];
+                        // 应用到遮罩层的背景上
+                        overlay.style.backgroundColor = randomColor;
+                    }, 120); // 每 120 毫秒切换一次颜色，制造快速闪烁感
+
+                    // 在指定的时间后停止闪烁
+                    setTimeout(() => {
+                        clearInterval(intervalId);
+                        // 闪烁结束后，恢复到一个固定的深色背景
+                        overlay.style.backgroundColor = '#1a1a1a';
+                        resolve();
+                    }, duration);
+                });
             }
 
             async function runSequence() {
@@ -143,20 +150,28 @@
                 instructionText.textContent = '请直视摄像头';
                 await new Promise(resolve => setTimeout(resolve, 2500));
 
-                // 3. 开始闪烁遮罩层
+                // 3. 开始为期 4 秒的彩色随机闪烁
                 instructionText.textContent = '正在进行扫描';
-                overlay.classList.add('flashing');
-                await new Promise(resolve => setTimeout(resolve, 4000));
+                await runColorFlash(4000);
                 
-                // 4. 停止闪烁并显示结果
-                overlay.classList.remove('flashing');
+                // 4. 显示验证完成
                 instructionText.textContent = "验证完成！";
                 
                 // 5. 跳转页面
                 setTimeout(() => {
-                    console.log("跳转到 processing.html");
-                    // window.location.href = 'processing.html' + window.location.search;
+                    // 跳转到 processing.html 并携带上网址参数
+                    window.location.href = 'processing.html' + window.location.search;
                 }, 1500);
+            }
+
+            async function startCamera() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+                    video.srcObject = stream;
+                    video.onplaying = runSequence;
+                } catch (err) {
+                    instructionText.textContent = "无法访问摄像头，请检查权限。";
+                }
             }
 
             startCamera();
