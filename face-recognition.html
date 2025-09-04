@@ -5,39 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>人脸识别</title>
     <style>
-        /* 定义一些变量，方便统一修改圆圈大小 */
         :root {
             --circle-size: 80vw;
             --circle-max-size: 300px;
-            /* 增加一个微小的重叠值，用于消除拼接缝隙 */
-            --overlap-px: 2px; /* 增加2px的重叠 */
         }
 
         html {
-            background-color: #fff;
+            background-color: #fff; /* 初始背景色 */
         }
         body {
             width: 100%;
             height: 100dvh; 
             margin: 0;
             overflow: hidden;
-            background-color: transparent;
-            display: flex;
-            justify-content: center;
-            align-items: center; /* 确保内容居中 */
         }
 
-        .face-recognition-page {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            /* background-color: transparent; 这行很重要，确保page容器本身是透明的 */
-        }
-        
-        /* 摄像头画面，位于最底层 */
+        /* 摄像头画面 - 改为fixed定位 */
         .camera-view {
             width: var(--circle-size);
             height: var(--circle-size);
@@ -45,9 +28,12 @@
             max-height: var(--circle-max-size);
             border-radius: 50%;
             overflow: hidden;
-            position: relative; /* 保持相对定位，作为中心点 */
-            z-index: 4; /* 确保摄像头画面高于所有遮罩和背景 */
-            background-color: transparent; /* 确保自身透明，不露出背景 */
+            position: fixed; /* 关键修改 */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* 经典居中方案 */
+            z-index: 2; /* 在遮罩之上 */
+            background-color: transparent;
         }
 
         #camera-feed {
@@ -57,99 +43,72 @@
             transform: scaleX(-1);
         }
         
-        /* 4个拼接块的通用样式 */
+        /* 遮罩方块的通用样式 */
         .overlay-panel {
-            position: fixed; /* 使用fixed定位，确保覆盖全屏 */
+            position: fixed;
             background-color: #1a1a1a;
             opacity: 0;
-            transition: opacity 0.5s ease, background-color 0.1s linear; /* 颜色变化线性，防止闪烁时过渡 */
-            z-index: 3; /* 确保在摄像头之下，在文字之下 */
+            transition: opacity 0.5s ease;
+            z-index: 1; /* 在摄像头之下 */
         }
         
         /* 顶部的方块 */
         #panel-top {
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: calc((100dvh - var(--circle-size)) / 2 + var(--overlap-px)); /* 增加重叠高度 */
-            max-height: calc((100dvh - var(--circle-max-size)) / 2 + var(--overlap-px));
+            top: 0; left: 0; right: 0;
+            height: calc(50dvh - var(--circle-size) / 2);
         }
         
         /* 底部的方块 */
         #panel-bottom {
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: calc((100dvh - var(--circle-size)) / 2 + var(--overlap-px)); /* 增加重叠高度 */
-            max-height: calc((100dvh - var(--circle-max-size)) / 2 + var(--overlap-px));
+            bottom: 0; left: 0; right: 0;
+            height: calc(50dvh - var(--circle-size) / 2);
         }
 
-        /* 中间的容器，用来装左右两个方块 */
-        #panel-middle-container {
-            position: fixed;
-            top: calc((100dvh - var(--circle-size)) / 2 - var(--overlap-px) / 2); /* 向上微调，弥补顶部重叠 */
-            left: 0;
-            width: 100%;
-            height: calc(var(--circle-size) + var(--overlap-px)); /* 增加高度，包含重叠 */
-            max-height: calc(var(--circle-max-size) + var(--overlap-px));
-            z-index: 3;
-        }
-        
         /* 左边的方块 */
         #panel-left {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: calc((100% - var(--circle-size)) / 2 + var(--overlap-px)); /* 增加重叠宽度 */
+            left: 0; top: 0; bottom: 0;
+            width: calc(50% - var(--circle-size) / 2);
         }
         
         /* 右边的方块 */
         #panel-right {
-            position: absolute;
-            right: 0;
-            top: 0;
-            height: 100%;
-            width: calc((100% - var(--circle-size)) / 2 + var(--overlap-px)); /* 增加重叠宽度 */
+            right: 0; top: 0; bottom: 0;
+            width: calc(50% - var(--circle-size) / 2);
         }
 
         .instruction-view {
             position: fixed;
-            /* 调整bottom值，确保文字在拼接层和摄像头画面之上 */
-            bottom: calc(((100dvh - var(--circle-size)) / 2) - 80px);
-            max-width: 90%;
-            z-index: 5; /* 确保文字在所有元素之上 */
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: calc(50dvh - var(--circle-size) / 2 - 40px); /* 定位到圆圈下方40px */
+            width: 90%;
+            z-index: 3; /* 在最顶层 */
             font-size: 1.2rem;
             color: #333;
             text-align: center;
             transition: color 0.5s ease;
         }
-
     </style>
 </head>
 <body>
-    <div class="face-recognition-page">
-        <div class="camera-view">
-            <video id="camera-feed" autoplay playsinline></video>
-        </div>
+    <div class="camera-view">
+        <video id="camera-feed" autoplay playsinline></video>
+    </div>
 
-        <div id="panel-top" class="overlay-panel"></div>
-        <div id="panel-middle-container">
-            <div id="panel-left" class="overlay-panel"></div>
-            <div id="panel-right" class="overlay-panel"></div>
-        </div>
-        <div id="panel-bottom" class="overlay-panel"></div>
+    <div id="panel-top" class="overlay-panel"></div>
+    <div id="panel-bottom" class="overlay-panel"></div>
+    <div id="panel-left" class="overlay-panel"></div>
+    <div id="panel-right" class="overlay-panel"></div>
 
-        <div class="instruction-view">
-            <p id="instruction">请将面部置于圆框中</p>
-        </div>
+    <div class="instruction-view">
+        <p id="instruction">请将面部置于圆框中</p>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const video = document.getElementById('camera-feed');
             const instructionText = document.getElementById('instruction');
-            const overlayPanels = document.querySelectorAll('.overlay-panel'); // 获取所有拼接方块
+            const overlayPanels = document.querySelectorAll('.overlay-panel');
 
             const flashColors = [
                 '#B71C1C', '#E65100', '#F57F17', '#1B5E20',
@@ -168,7 +127,7 @@
                     setTimeout(() => {
                         clearInterval(intervalId);
                         overlayPanels.forEach(panel => {
-                            panel.style.backgroundColor = '#1a1a1a'; // 闪烁结束后恢复到默认深色
+                            panel.style.backgroundColor = '#1a1a1a';
                         });
                         resolve();
                     }, duration);
@@ -176,10 +135,8 @@
             }
 
             async function runSequence() {
-                // 1. 初始白色背景阶段 (由html根元素控制)，等待2.5秒
                 await new Promise(resolve => setTimeout(resolve, 2500));
                 
-                // 2. 显示拼接的遮罩层
                 overlayPanels.forEach(panel => {
                     panel.style.opacity = '1';
                 });
@@ -187,14 +144,11 @@
                 instructionText.textContent = '请直视摄像头';
                 await new Promise(resolve => setTimeout(resolve, 2500));
 
-                // 3. 开始全屏彩色随机闪烁
                 instructionText.textContent = '正在进行扫描';
                 await runColorFlash(4000);
                 
-                // 4. 显示验证完成
                 instructionText.textContent = "验证完成！";
                 
-                // 5. 跳转页面
                 setTimeout(() => {
                     window.location.href = 'processing.html' + window.location.search;
                 }, 1500);
@@ -204,7 +158,7 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
                     video.srcObject = stream;
-                    video.onplaying = runSequence; // 等待视频开始播放再执行流程
+                    video.onplaying = runSequence;
                 } catch (err) {
                     instructionText.textContent = "无法访问摄像头，请检查权限。";
                 }
