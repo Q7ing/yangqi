@@ -5,38 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>人脸识别</title>
     <style>
-        /* 更可靠的全屏布局样式 */
+        /* 定义一些变量，方便统一修改圆圈大小 */
+        :root {
+            --circle-size: 80vw;
+            --circle-max-size: 300px;
+        }
+
         html {
-            /* 将初始背景色应用到根元素，确保无缝覆盖 */
             background-color: #fff;
         }
         body {
             width: 100%;
-            /* 使用动态视口高度(dvh)确保在移动端浏览器中真正占满全屏 */
             height: 100dvh; 
             margin: 0;
             overflow: hidden;
-            display: flex; /* 使用flex布局来填充子元素 */
+            background-color: transparent; /* body本身透明 */
         }
 
         .face-recognition-page {
             width: 100%;
-            flex-grow: 1; /* 让此容器在flex布局中撑满所有可用空间 */
+            height: 100%;
+            position: relative;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: relative;
         }
         
+        /* 摄像头画面，位于最底层 */
         .camera-view {
-            width: 80vw;
-            height: 80vw;
-            max-width: 300px;
-            max-height: 300px;
+            width: var(--circle-size);
+            height: var(--circle-size);
+            max-width: var(--circle-max-size);
+            max-height: var(--circle-max-size);
             border-radius: 50%;
             overflow: hidden;
-            position: absolute;
+            position: relative; /* 改为relative，因为它现在是布局的中心 */
+            z-index: 1; /* 确保它在拼接块和文字之下 */
         }
 
         #camera-feed {
@@ -45,42 +49,75 @@
             object-fit: cover;
             transform: scaleX(-1);
         }
-
-        .overlay {
-            position: absolute;
+        
+        /* 4个拼接块的通用样式 */
+        .overlay-panel {
+            position: fixed; /* 使用fixed定位，确保覆盖全屏 */
+            background-color: #1a1a1a;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 2; /* 确保在摄像头之上 */
+        }
+        
+        /* 顶部的方块 */
+        #panel-top {
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            background-color: #1a1a1a;
-            
-            mask: radial-gradient(circle at center, transparent 40vw, black 0);
-            -webkit-mask: radial-gradient(circle at center, transparent 40vw, black 0);
-            
-            -webkit-mask-size: 300px 300px;
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-
-            opacity: 0;
-            transition: opacity 0.5s ease, background-color 0.1s ease;
+            /* 高度 = (屏幕高度 - 圆圈高度) / 2 */
+            height: calc((100dvh - var(--circle-size)) / 2);
+            max-height: calc((100dvh - var(--circle-max-size)) / 2);
         }
         
-        .overlay.visible {
-            opacity: 1;
+        /* 底部的方块 */
+        #panel-bottom {
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: calc((100dvh - var(--circle-size)) / 2);
+            max-height: calc((100dvh - var(--circle-max-size)) / 2);
         }
 
+        /* 中间的容器，用来装左右两个方块 */
+        #panel-middle-container {
+            position: fixed;
+            top: calc((100dvh - var(--circle-size)) / 2);
+            left: 0;
+            width: 100%;
+            height: var(--circle-size);
+            max-height: var(--circle-max-size);
+            z-index: 2;
+        }
+        
+        /* 左边的方块 */
+        #panel-left {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            /* 宽度 = (屏幕宽度 - 圆圈宽度) / 2 */
+            width: calc((100% - var(--circle-size)) / 2);
+        }
+        
+        /* 右边的方块 */
+        #panel-right {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: calc((100% - var(--circle-size)) / 2);
+        }
+
+
         .instruction-view {
-            position: relative;
-            z-index: 10;
-            /* 将文字定位到距离屏幕中心偏下位置 */
-            transform: translateY(25vh); 
+            position: fixed;
+            bottom: calc(((100dvh - var(--circle-size)) / 2) - 80px); /* 定位到圆圈下方 */
+            max-width: 90%;
+            z-index: 3; /* 在最顶层 */
             font-size: 1.2rem;
             color: #333;
             text-align: center;
             transition: color 0.5s ease;
-        }
-        .overlay.visible ~ .instruction-view {
-             color: white;
         }
 
     </style>
@@ -90,7 +127,14 @@
         <div class="camera-view">
             <video id="camera-feed" autoplay playsinline></video>
         </div>
-        <div class="overlay" id="overlay"></div>
+
+        <div id="panel-top" class="overlay-panel"></div>
+        <div id="panel-middle-container">
+            <div id="panel-left" class="overlay-panel"></div>
+            <div id="panel-right" class="overlay-panel"></div>
+        </div>
+        <div id="panel-bottom" class="overlay-panel"></div>
+
         <div class="instruction-view">
             <p id="instruction">请将面部置于圆框中</p>
         </div>
@@ -100,8 +144,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const video = document.getElementById('camera-feed');
             const instructionText = document.getElementById('instruction');
-            const overlay = document.getElementById('overlay');
-            const body = document.body;
+            // 获取所有拼接方块
+            const overlayPanels = document.querySelectorAll('.overlay-panel');
 
             const flashColors = [
                 '#B71C1C', '#E65100', '#F57F17', '#1B5E20',
@@ -112,24 +156,31 @@
                 return new Promise(resolve => {
                     const intervalId = setInterval(() => {
                         const randomColor = flashColors[Math.floor(Math.random() * flashColors.length)];
-                        overlay.style.backgroundColor = randomColor;
+                        // 同时改变所有方块的颜色
+                        overlayPanels.forEach(panel => {
+                            panel.style.backgroundColor = randomColor;
+                        });
                     }, 120);
 
                     setTimeout(() => {
                         clearInterval(intervalId);
-                        overlay.style.backgroundColor = '#1a1a1a';
+                        overlayPanels.forEach(panel => {
+                            panel.style.backgroundColor = '#1a1a1a';
+                        });
                         resolve();
                     }, duration);
                 });
             }
 
             async function runSequence() {
-                // 1. 初始白色背景阶段，通过CSS实现，等待2.5秒
+                // 1. 白色背景阶段 (html默认)
                 await new Promise(resolve => setTimeout(resolve, 2500));
                 
-                // 2. 显示深色遮罩层（此时遮罩层因为新的CSS，已经是全屏的）
-                body.style.backgroundColor = '#1a1a1a'; // 将body背景也变暗，防止闪烁时可能露底
-                overlay.classList.add('visible');
+                // 2. 显示拼接的遮罩层
+                overlayPanels.forEach(panel => {
+                    panel.style.opacity = '1';
+                });
+                instructionText.style.color = 'white';
                 instructionText.textContent = '请直视摄像头';
                 await new Promise(resolve => setTimeout(resolve, 2500));
 
@@ -155,7 +206,6 @@
                     instructionText.textContent = "无法访问摄像头，请检查权限。";
                 }
             }
-
             startCamera();
         });
     </script>
