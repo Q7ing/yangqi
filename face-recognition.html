@@ -1,119 +1,67 @@
 <!DOCTYPE html>
-
 <html lang="zh-CN">
-
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>人脸识别</title>
-
-    <link rel="stylesheet" href="style.css">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人脸识别</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+    <div class="face-recognition-page">
+        <div class="camera-view">
+            <video id="camera-feed" autoplay playsinline></video>
+            <div class="camera-mask"></div>
+        </div>
+        <div class="instruction-view">
+            <p id="instruction">请将面部置于圆框中</p>
+        </div>
+    </div>
 
-    <div class="face-recognition-page">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- 修改点 ---
+            // 页面加载后，立刻给 body 添加class，触发CSS中的全屏样式
+            document.body.classList.add('face-recognition-mode');
+            // --- 修改结束 ---
 
-        <div class="camera-view">
+            const video = document.getElementById('camera-feed');
+            const instructionText = document.getElementById('instruction');
+            
+            async function startCamera() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+                    video.srcObject = stream;
+                    setTimeout(runVerificationSequence, 1000); 
+                } catch (err) {
+                    instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";
+                }
+            }
 
-            <video id="camera-feed" autoplay playsinline></video>
+            function runTask(taskName) {
+                return new Promise(resolve => {
+                    instructionText.textContent = taskName;
+                    let duration = Math.floor(Math.random() * 3) + 2; // 随机2-4秒
+                    setTimeout(resolve, duration * 1000);
+                });
+            }
 
-            <div class="camera-mask"></div>
+            async function runVerificationSequence() {
+                const actions = ['请眨眨眼', '请摇摇头', '请张张嘴'];
+                const shuffledActions = actions.sort(() => 0.5 - Math.random());
+                const tasks = shuffledActions.slice(0, 2);
+                for (const task of tasks) {
+                    await runTask(task);
+                }
+                instructionText.textContent = "验证完成！";
+                
+                setTimeout(() => {
+                    window.location.href = 'processing.html' + window.location.search;
+                }, 1500);
+            }
 
-        </div>
-
-        <div class="instruction-view">
-
-            <p id="instruction">请将面部置于圆框中</p>
-
-        </div>
-
-    </div>
-
-    <script>
-
-        document.addEventListener('DOMContentLoaded', () => {
-
-            const video = document.getElementById('camera-feed');
-
-            const instructionText = document.getElementById('instruction');
-
-            
-
-            async function startCamera() {
-
-                try {
-
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-
-                    video.srcObject = stream;
-
-                    setTimeout(runVerificationSequence, 1000); 
-
-                } catch (err) {
-
-                    instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";
-
-                }
-
-            }
-
-
-
-            function runTask(taskName) {
-
-                return new Promise(resolve => {
-
-                    instructionText.textContent = taskName;
-
-                    let duration = Math.floor(Math.random() * 3) + 2; // 随机2-4秒
-
-                    setTimeout(resolve, duration * 1000);
-
-                });
-
-            }
-
-
-
-            async function runVerificationSequence() {
-
-                const actions = ['请眨眨眼', '请摇摇头', '请张张嘴'];
-
-                const shuffledActions = actions.sort(() => 0.5 - Math.random());
-
-                const tasks = shuffledActions.slice(0, 2);
-
-                for (const task of tasks) {
-
-                    await runTask(task);
-
-                }
-
-                instructionText.textContent = "验证完成！";
-
-                
-
-                setTimeout(() => {
-
-                    window.location.href = 'processing.html' + window.location.search;
-
-                }, 1500);
-
-            }
-
-
-
-            startCamera();
-
-        });
-
-    </script>
-
+            startCamera();
+        });
+    </script>
 </body>
-
 </html>
