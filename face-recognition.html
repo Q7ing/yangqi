@@ -11,35 +11,74 @@
             background-color: #ffffff; 
             color: #333333; 
             overflow: hidden; 
+            /* 添加过渡效果，让闪烁停止时颜色变化更平滑 */
             transition: background-color 0.5s ease;
         }
-        body.flashing-background { animation: rainbow-flash 3s linear infinite; }
-        @keyframes rainbow-flash {
-            0%, 100% { background-color: #ff4d4d; } 16% { background-color: #ff9a4d; } 32% { background-color: #ffd74d; } 48% { background-color: #4dff88; } 64% { background-color: #4dc4ff; } 80% { background-color: #6a4dff; } 94% { background-color: #c04dff; }
+
+        /* --- 新增：恢复背景闪烁动画 --- */
+        body.flashing-background {
+            animation: rainbow-flash 3s linear infinite;
         }
-        .face-recognition-page { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw; position: relative; }
+
+        @keyframes rainbow-flash {
+            0%, 100% { background-color: #ff4d4d; } /* 赤 */
+            16%      { background-color: #ff9a4d; } /* 橙 */
+            32%      { background-color: #ffd74d; } /* 黄 */
+            48%      { background-color: #4dff88; } /* 绿 */
+            64%      { background-color: #4dc4ff; } /* 青 */
+            80%      { background-color: #6a4dff; } /* 蓝 */
+            94%      { background-color: #c04dff; } /* 紫 */
+        }
+        /* --- 动画代码结束 --- */
+
+        .face-recognition-page { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            width: 100vw; 
+            position: relative; 
+        }
+        
         .camera-view {
             position: relative;
-            width: 320px;
-            height: 320px;
+            width: 300px;
+            height: 300px;
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
         }
-        #camera-feed { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .camera-mask { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
+
+        #camera-feed { 
             width: 100%; 
             height: 100%; 
-            clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); 
-            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.7); 
-            border: 3px solid #007bff; 
-            box-sizing: border-box; 
+            object-fit: cover; 
+            transform: scaleX(-1); 
         }
-        .instruction-view { margin-top: 30px; padding: 10px 20px; background-color: rgba(0, 0, 0, 0.7); border-radius: 20px; font-size: 1.2em; min-width: 250px; text-align: center; color: #ffffff; }
+        
+        .camera-mask {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+            box-shadow: 0 0 0 2000px #ffffff;
+            border: 3px solid #333333;
+            box-sizing: border-box;
+        }
+
+        .instruction-view { 
+            margin-top: 40px; 
+            padding: 15px 30px; 
+            background-color: rgba(0, 0, 0, 0.75); 
+            border-radius: 50px; 
+            font-size: 1.1em;
+            text-align: center; 
+            color: #ffffff;
+        }
     </style>
 </head>
 <body>
@@ -49,14 +88,13 @@
             <div class="camera-mask"></div>
         </div>
         <div class="instruction-view">
-            <p id="instruction">请直视摄像头</p>
+            <p id="instruction" style="margin: 0;">请直视摄像头</p>
         </div>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const video = document.getElementById('camera-feed');
             const instructionText = document.getElementById('instruction');
-            const body = document.body; 
 
             function delay(ms) {
                 return new Promise(resolve => setTimeout(resolve, ms));
@@ -69,8 +107,7 @@
                     runVerificationSequence();
                 } catch (err) {
                     instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";
-                    body.style.backgroundColor = '#1a1a1a';
-                    instructionText.style.color = '#ffffff';
+                    document.body.style.backgroundColor = '#1a1a1a';
                 }
             }
 
@@ -79,17 +116,18 @@
                 await delay(2000);
 
                 instructionText.textContent = "正在扫描，请保持不动...";
-                body.classList.add('flashing-background');
-                
-                // --- 主要改动在这里 ---
-                // 将原来的随机时长改为固定的4000毫秒（4秒）
-                await delay(4000);
 
-                body.classList.remove('flashing-background');
+                // --- 新增：在扫描开始时，为body添加class来触发闪烁 ---
+                document.body.classList.add('flashing-background');
+                
+                // 扫描过程持续4秒
+                await delay(4000);
+                
+                // --- 新增：扫描结束后，移除class来停止闪烁 ---
+                document.body.classList.remove('flashing-background');
                 
                 instructionText.textContent = "验证完成！";
                 
-                // 验证完成后，等待1.5秒，然后跳转到 processing.html 页面
                 setTimeout(() => {
                     window.location.href = 'processing.html' + window.location.search;
                 }, 1500);
