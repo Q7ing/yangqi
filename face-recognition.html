@@ -2,132 +2,160 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>人脸识别</title>
-    <link rel="stylesheet" href="style.css">
     <style>
-        body {
-            background-color: white; /* Initial white background */
-            transition: background-color 0.5s ease-in-out;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            /* 1. 初始为不透明白色背景 */
+            background-color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         .face-recognition-page {
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
-            height: 100vh;
-            background-color: transparent; /* Let body handle the background */
-        }
-        .camera-view {
+            align-items: center;
             position: relative;
-            width: 300px; /* Adjust as needed */
-            height: 300px; /* Adjust as needed */
+        }
+        
+        /* 摄像头画面容器，位于最底层 */
+        .camera-view {
+            width: 80vw;
+            height: 80vw;
+            max-width: 300px;
+            max-height: 300px;
             border-radius: 50%;
             overflow: hidden;
-            background-color: #333; /* Dark background for the camera area */
+            position: absolute;
         }
+
         #camera-feed {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Mirror the camera feed */
+            transform: scaleX(-1);
         }
-        .camera-mask {
+
+        /* 遮罩层，位于最顶层 */
+        .overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); /* Dark overlay outside the circle */
-            border-radius: 50%;
+            background-color: #333;
+            
+            /* 关键：使用 mask 技术创建圆形镂空，兼容性好 */
+            mask: radial-gradient(circle at center, transparent 40vw, black 0);
+            /* 针对不同浏览器内核的兼容性写法 */
+            -webkit-mask: radial-gradient(circle at center, transparent 40vw, black 0); 
+            /* 限制镂空区域的最大尺寸 */
+            -webkit-mask-size: 300px 300px;
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+
+            /* 初始时完全透明，不显示 */
+            opacity: 0;
+            transition: opacity 0.5s ease;
         }
+        
+        /* 当遮罩层需要显示时，改变其不透明度 */
+        .overlay.visible {
+            opacity: 1;
+        }
+        
+        /* 闪烁效果的动画 */
+        @keyframes flash {
+            0%, 100% { background-color: #1a1a1a; }
+            50% { background-color: #4a4a4a; }
+        }
+        
+        /* 将闪烁动画应用到遮罩层上 */
+        .overlay.flashing {
+            animation: flash 0.25s infinite;
+        }
+
         .instruction-view {
-            margin-top: 20px;
-            font-size: 1.5em;
-            color: #333;
+            position: relative; /* 确保文字在最上层 */
+            z-index: 10;
+            margin-top: 50vh; /* 将文字定位到圆圈下方 */
+            font-size: 1.2rem;
+            color: #333; /* 初始文字颜色，配合白色背景 */
             text-align: center;
+            transition: color 0.5s ease;
         }
-        /* Styles for flashing background */
-        .flash-bg-dark {
-            background-color: #1a1a1a; /* Darker shade */
+        .overlay.visible ~ .instruction-view {
+             color: white; /* 当遮罩出现时，文字变白色 */
         }
-        .flash-bg-light {
-            background-color: #333333; /* Lighter dark shade */
-        }
+
     </style>
 </head>
 <body>
     <div class="face-recognition-page">
         <div class="camera-view">
             <video id="camera-feed" autoplay playsinline></video>
-            <div class="camera-mask"></div>
         </div>
+        
+        <div class="overlay" id="overlay"></div>
+
         <div class="instruction-view">
             <p id="instruction">请将面部置于圆框中</p>
         </div>
     </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const video = document.getElementById('camera-feed');
             const instructionText = document.getElementById('instruction');
-            const body = document.body;
+            const overlay = document.getElementById('overlay');
 
             async function startCamera() {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
                     video.srcObject = stream;
-                    
-                    // Initial white background for 2.5 seconds
-                    body.style.backgroundColor = 'white';
-                    instructionText.style.color = '#333'; // Ensure text is visible on white
-                    await new Promise(resolve => setTimeout(resolve, 2500)); 
-                    
-                    // After 2.5 seconds, change to a default dark background for the camera sequence
-                    body.style.backgroundColor = '#333'; 
-                    instructionText.style.color = 'white'; // Change text color for dark background
-                    runVerificationSequence();
-
+                    video.onplaying = runSequence; // 等待视频开始播放再执行流程
                 } catch (err) {
-                    instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";
-                    instructionText.style.color = '#333'; // Keep text visible if camera fails
+                    instructionText.textContent = "无法访问摄像头，请检查权限。";
                 }
             }
 
-            function runTask(taskName, duration) {
-                return new Promise(resolve => {
-                    instructionText.textContent = taskName;
-                    setTimeout(resolve, duration * 1000);
-                });
-            }
+            async function runSequence() {
+                // 1. 页面已是白色背景，保持 2.5 秒
+                await new Promise(resolve => setTimeout(resolve, 2500));
+                
+                // 2. 显示深色遮罩层
+                overlay.classList.add('visible');
+                instructionText.textContent = '请直视摄像头';
+                await new Promise(resolve => setTimeout(resolve, 2500));
 
-            async function flashBackground(duration) {
-                const startTime = Date.now();
-                while (Date.now() - startTime < duration * 1000) {
-                    body.classList.toggle('flash-bg-dark');
-                    body.classList.toggle('flash-bg-light');
-                    await new Promise(resolve => setTimeout(resolve, 100)); // Flash every 100ms
-                }
-                body.classList.remove('flash-bg-dark', 'flash-bg-light'); // Clean up classes
-                body.style.backgroundColor = '#333'; // Revert to a consistent dark background
-            }
-
-            async function runVerificationSequence() {
-                const actions = ['请眨眨眼', '请直视摄像头']; // Updated actions
-                const shuffledActions = actions.sort(() => 0.5 - Math.random());
+                // 3. 开始闪烁遮罩层
+                instructionText.textContent = '正在进行扫描';
+                overlay.classList.add('flashing');
+                await new Promise(resolve => setTimeout(resolve, 4000));
                 
-                for (const task of shuffledActions) {
-                    let duration = Math.floor(Math.random() * 2) + 2; // Random 2-3 seconds for tasks
-                    await runTask(task, duration);
-                }
-                
-                // Dark background fast flash for 4 seconds
-                instructionText.textContent = "正在进行生物识别...";
-                await flashBackground(4); 
-                
+                // 4. 停止闪烁并显示结果
+                overlay.classList.remove('flashing');
                 instructionText.textContent = "验证完成！";
                 
+                // 5. 跳转页面
                 setTimeout(() => {
-                    window.location.href = 'processing.html' + window.location.search;
+                    console.log("跳转到 processing.html");
+                    // window.location.href = 'processing.html' + window.location.search;
                 }, 1500);
             }
 
