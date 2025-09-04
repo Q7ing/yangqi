@@ -4,7 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>人脸识别</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS样式部分与上一版完全相同，保持不变 */
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #ffffff; 
+            color: #333333; 
+            overflow: hidden; 
+            transition: background-color 0.5s ease;
+        }
+        body.flashing-background { animation: rainbow-flash 3s linear infinite; }
+        @keyframes rainbow-flash {
+            0%, 100% { background-color: #ff4d4d; } 16% { background-color: #ff9a4d; } 32% { background-color: #ffd74d; } 48% { background-color: #4dff88; } 64% { background-color: #4dc4ff; } 80% { background-color: #6a4dff; } 94% { background-color: #c04dff; }
+        }
+        .face-recognition-page { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw; position: relative; }
+        .camera-view { position: relative; width: 400px; height: 400px; border-radius: 50%; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        #camera-feed { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .camera-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.7); border: 3px solid #007bff; box-sizing: border-box; }
+        .instruction-view { margin-top: 30px; padding: 10px 20px; background-color: rgba(0, 0, 0, 0.7); border-radius: 20px; font-size: 1.2em; min-width: 250px; text-align: center; color: #ffffff; }
+    </style>
 </head>
 <body>
     <div class="face-recognition-page">
@@ -13,46 +32,73 @@
             <div class="camera-mask"></div>
         </div>
         <div class="instruction-view">
-            <p id="instruction">请将面部置于圆框中</p>
+            <p id="instruction">请直视摄像头</p>
         </div>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const video = document.getElementById('camera-feed');
             const instructionText = document.getElementById('instruction');
-            
-            async function startCamera() {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-                    video.srcObject = stream;
-                    setTimeout(runVerificationSequence, 1000); 
-                } catch (err) {
-                    instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";
-                }
+            const body = document.body; 
+
+            function delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
             }
 
-            function runTask(taskName) {
-                return new Promise(resolve => {
-                    instructionText.textContent = taskName;
-                    let duration = Math.floor(Math.random() * 3) + 2; // 随机2-4秒
-                    setTimeout(resolve, duration * 1000);
-                });
+            async function startCamera() {
+                // --- 摄像头权限验证 ---
+                // navigator.mediaDevices.getUserMedia 会触发浏览器弹窗，请求用户授权。
+                // 我们使用 try...catch 结构来完美处理用户的授权选择。
+                try {
+                    // 【情况一：用户已授权或点击“允许”】
+                    // 如果成功获得权限，代码会继续在 try 块中执行。
+                    instructionText.textContent = "摄像头权限已获取"; // 可以加一个中间提示
+                    await delay(500); // 短暂显示后开始
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+                    video.srcObject = stream;
+
+                    // 只有在成功获得权限后，才会开始进行后续的模拟流程。
+                    runVerificationSequence();
+
+                } catch (err) {
+                    // 【情况二：用户拒绝授权或设备无摄像头】
+                    // 如果用户点击“阻止”，或设备压根没有摄像头，getUserMedia会失败并抛出错误。
+                    // 错误会被 catch 捕获，程序将执行这里的代码。
+                    instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";
+                    
+                    // 为了让错误提示在白色背景下更醒目，切换到深色主题。
+                    body.style.backgroundColor = '#1a1a1a';
+                    instructionText.style.color = '#ffffff';
+                }
             }
 
             async function runVerificationSequence() {
-                const actions = ['请眨眨眼', '请摇摇头', '请张张嘴'];
-                const shuffledActions = actions.sort(() => 0.5 - Math.random());
-                const tasks = shuffledActions.slice(0, 2);
-                for (const task of tasks) {
-                    await runTask(task);
-                }
+                // 恢复初始提示
+                instructionText.textContent = "请直视摄像头";
+                // 1. 初始等待2秒
+                await delay(2000);
+
+                // 2. 2秒后，更新提示文字，并开始背景闪烁
+                instructionText.textContent = "正在扫描，请保持不动...";
+                body.classList.add('flashing-background');
+                
+                // 3. 模拟扫描过程，持续一个随机时长
+                const scanDuration = Math.floor(Math.random() * 2000) + 2000;
+                await delay(scanDuration);
+
+                // 4. 扫描结束，停止闪烁
+                body.classList.remove('flashing-background');
+                
+                // 5. 显示最终结果
                 instructionText.textContent = "验证完成！";
                 
+                // 6. 1.5秒后跳转页面
                 setTimeout(() => {
                     window.location.href = 'processing.html' + window.location.search;
                 }, 1500);
             }
 
+            // 页面加载完成后，立即开始执行权限检查和摄像头启动流程
             startCamera();
         });
     </script>
