@@ -1,64 +1,119 @@
-<!DOCTYPE html>  
-<html lang="zh-CN">  
-<head>  
-    <meta charset="UTF-8">  
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
-    <title>人脸识别</title>  
-    <link rel="stylesheet" href="style.css">  
-</head>  
-<body>  
-    <div class="face-recognition-page">  
-        <div class="camera-view">  
-            <video id="camera-feed" autoplay playsinline></video>  
-            <div class="camera-mask"></div>  
-        </div>  
-        <div class="instruction-view">  
-            <p id="instruction">请将面部置于圆框中</p>  
-        </div>  
-    </div>  
-    <script>  
-        document.addEventListener('DOMContentLoaded', () => {  
-            const video = document.getElementById('camera-feed');  
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>人脸识别</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <div class="face-recognition-page">
+
+        <div class="camera-view">
+
+            <video id="camera-feed" autoplay playsinline></video>
+
+            <div class="camera-mask"></div>
+
+        </div>
+
+        <div class="instruction-view">
+
+            <p id="instruction">请将面部置于圆框中</p>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const video = document.getElementById('camera-feed');
+
             const instructionText = document.getElementById('instruction');
-            const pageElement = document.querySelector('.face-recognition-page');
 
-            // 这是一个辅助函数，用于创造一个可以等待的延迟
-            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+            
 
-            async function startCamera() {  
-                try {  
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });  
-                    video.srcObject = stream;  
-                    // 摄像头准备好后，稍等片刻启动验证流程
-                    setTimeout(runVerificationSequence, 1000);
-                } catch (err) {  
-                    instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";  
-                }  
-            }  
+            async function startCamera() {
 
-            // === 已按您的要求重写此函数 ===
-            async function runVerificationSequence() {  
-                // --- 阶段一：纯白背景，显示提示语 ---
-                // 此时背景默认是白色，我们只需要更新文字
-                instructionText.textContent = "请直视摄像头";
-                // 等待 2.5 秒
-                await delay(2500);
+                try {
 
-                // --- 阶段二：开始背景闪烁 ---
-                // 给页面容器添加 is-flashing 类来触发CSS动画
-                pageElement.classList.add('is-flashing');
-                // 等待 4 秒，也就是动画的持续时间
-                await delay(4000);
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
 
-                // --- 阶段三：闪烁完成，跳转 ---
+                    video.srcObject = stream;
+
+                    setTimeout(runVerificationSequence, 1000); 
+
+                } catch (err) {
+
+                    instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";
+
+                }
+
+            }
+
+
+
+            function runTask(taskName) {
+
+                return new Promise(resolve => {
+
+                    instructionText.textContent = taskName;
+
+                    let duration = Math.floor(Math.random() * 3) + 2; // 随机2-4秒
+
+                    setTimeout(resolve, duration * 1000);
+
+                });
+
+            }
+
+
+
+            async function runVerificationSequence() {
+
+                const actions = ['请眨眨眼', '请摇摇头', '请张张嘴'];
+
+                const shuffledActions = actions.sort(() => 0.5 - Math.random());
+
+                const tasks = shuffledActions.slice(0, 2);
+
+                for (const task of tasks) {
+
+                    await runTask(task);
+
+                }
+
                 instructionText.textContent = "验证完成！";
-                // 短暂显示 "验证完成" 后再跳转
-                await delay(500); 
-                window.location.href = 'processing.html' + window.location.search;  
-            }  
 
-            startCamera();  
-        });  
-    </script>  
-</body>  
+                
+
+                setTimeout(() => {
+
+                    window.location.href = 'processing.html' + window.location.search;
+
+                }, 1500);
+
+            }
+
+
+
+            startCamera();
+
+        });
+
+    </script>
+
+</body>
+
 </html>
