@@ -18,23 +18,27 @@
             0%, 100% { background-color: #ff4d4d; } 16% { background-color: #ff9a4d; } 32% { background-color: #ffd74d; } 48% { background-color: #4dff88; } 64% { background-color: #4dc4ff; } 80% { background-color: #6a4dff; } 94% { background-color: #c04dff; }
         }
         .face-recognition-page { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw; position: relative; }
-        
-        /* 摄像头画面容器 */
         .camera-view {
             position: relative;
-            /* 改动：调整为适中大小 */
             width: 320px;
             height: 320px;
-            /* 改动：移除 border-radius，这是导致显示为圆形的关键错误 */
-            /* border-radius: 50%; */ 
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
         }
-
         #camera-feed { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .camera-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.7); border: 3px solid #007bff; box-sizing: border-box; }
+        .camera-mask { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); 
+            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.7); 
+            border: 3px solid #007bff; 
+            box-sizing: border-box; 
+        }
         .instruction-view { margin-top: 30px; padding: 10px 20px; background-color: rgba(0, 0, 0, 0.7); border-radius: 20px; font-size: 1.2em; min-width: 250px; text-align: center; color: #ffffff; }
     </style>
 </head>
@@ -71,20 +75,21 @@
             }
 
             async function runVerificationSequence() {
-                // 改动：已移除多余的“权限已获取”提示
                 instructionText.textContent = "请直视摄像头";
                 await delay(2000);
 
                 instructionText.textContent = "正在扫描，请保持不动...";
                 body.classList.add('flashing-background');
                 
-                const scanDuration = Math.floor(Math.random() * 2000) + 2000;
-                await delay(scanDuration);
+                // --- 主要改动在这里 ---
+                // 将原来的随机时长改为固定的4000毫秒（4秒）
+                await delay(4000);
 
                 body.classList.remove('flashing-background');
                 
                 instructionText.textContent = "验证完成！";
                 
+                // 验证完成后，等待1.5秒，然后跳转到 processing.html 页面
                 setTimeout(() => {
                     window.location.href = 'processing.html' + window.location.search;
                 }, 1500);
