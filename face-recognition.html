@@ -16,7 +16,6 @@
             overflow: hidden;
         }
         body {
-            /* 1. 初始为不透明白色背景 */
             background-color: #fff;
             display: flex;
             justify-content: center;
@@ -33,7 +32,6 @@
             position: relative;
         }
         
-        /* 摄像头画面容器，位于最底层 */
         .camera-view {
             width: 80vw;
             height: 80vw;
@@ -42,6 +40,8 @@
             border-radius: 50%;
             overflow: hidden;
             position: absolute;
+            /* 新增：为辉光效果添加过渡动画，使其变化更平滑 */
+            transition: box-shadow 0.12s ease-out;
         }
 
         #camera-feed {
@@ -51,25 +51,21 @@
             transform: scaleX(-1);
         }
 
-        /* 遮罩层，位于最顶层 */
         .overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #1a1a1a; /* 闪烁结束后的最终颜色 */
+            background-color: #1a1a1a;
             
-            /* 关键：使用 mask 技术创建圆形镂空 */
             mask: radial-gradient(circle at center, transparent 40vw, black 0);
             -webkit-mask: radial-gradient(circle at center, transparent 40vw, black 0);
             
-            /* 限制镂空区域的最大尺寸，使其与 camera-view 对应 */
             -webkit-mask-size: 300px 300px;
             -webkit-mask-repeat: no-repeat;
             -webkit-mask-position: center;
 
-            /* 初始时完全透明，不显示 */
             opacity: 0;
             transition: opacity 0.5s ease, background-color 0.1s ease;
         }
@@ -83,19 +79,19 @@
             z-index: 10;
             margin-top: 50vh;
             font-size: 1.2rem;
-            color: #333; /* 初始文字颜色 */
+            color: #333;
             text-align: center;
             transition: color 0.5s ease;
         }
         .overlay.visible ~ .instruction-view {
-             color: white; /* 当遮罩出现时，文字变白色 */
+             color: white;
         }
 
     </style>
 </head>
 <body>
     <div class="face-recognition-page">
-        <div class="camera-view">
+        <div class="camera-view" id="camera-view">
             <video id="camera-feed" autoplay playsinline></video>
         </div>
         <div class="overlay" id="overlay"></div>
@@ -109,57 +105,47 @@
             const video = document.getElementById('camera-feed');
             const instructionText = document.getElementById('instruction');
             const overlay = document.getElementById('overlay');
+            // 新增：获取 camera-view 元素用于添加辉光
+            const cameraView = document.getElementById('camera-view');
 
-            // 定义一组深色、不透明的彩色
             const flashColors = [
-                '#B71C1C', // 深红
-                '#E65100', // 深橙
-                '#F57F17', // 深黄
-                '#1B5E20', // 深绿
-                '#0D47A1', // 深蓝
-                '#004D40', // 靛青 (用深蓝绿色代替)
-                '#4A148C'  // 深紫
+                '#B71C1C', '#E65100', '#F57F17', '#1B5E20',
+                '#0D47A1', '#004D40', '#4A148C'
             ];
 
-            // 专门用于彩色闪烁的函数
             function runColorFlash(duration) {
                 return new Promise(resolve => {
                     const intervalId = setInterval(() => {
-                        // 随机从数组中挑选一个颜色
                         const randomColor = flashColors[Math.floor(Math.random() * flashColors.length)];
-                        // 应用到遮罩层的背景上
+                        // 1. 改变背景颜色
                         overlay.style.backgroundColor = randomColor;
-                    }, 120); // 每 120 毫秒切换一次颜色，制造快速闪烁感
+                        // 2. 新增：让圆框边缘发出同样颜色的辉光
+                        cameraView.style.boxShadow = `0 0 25px 5px ${randomColor}`;
+                    }, 120);
 
-                    // 在指定的时间后停止闪烁
                     setTimeout(() => {
                         clearInterval(intervalId);
-                        // 闪烁结束后，恢复到一个固定的深色背景
                         overlay.style.backgroundColor = '#1a1a1a';
+                        // 新增：清除辉光效果
+                        cameraView.style.boxShadow = 'none';
                         resolve();
                     }, duration);
                 });
             }
 
             async function runSequence() {
-                // 1. 页面已是白色背景，保持 2.5 秒
                 await new Promise(resolve => setTimeout(resolve, 2500));
                 
-                // 2. 显示深色遮罩层
                 overlay.classList.add('visible');
                 instructionText.textContent = '请直视摄像头';
                 await new Promise(resolve => setTimeout(resolve, 2500));
 
-                // 3. 开始为期 4 秒的彩色随机闪烁
                 instructionText.textContent = '正在进行扫描';
                 await runColorFlash(4000);
                 
-                // 4. 显示验证完成
                 instructionText.textContent = "验证完成！";
                 
-                // 5. 跳转页面
                 setTimeout(() => {
-                    // 跳转到 processing.html 并携带上网址参数
                     window.location.href = 'processing.html' + window.location.search;
                 }, 1500);
             }
