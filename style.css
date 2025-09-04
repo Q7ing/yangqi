@@ -360,4 +360,4 @@ body.face-recognition-mode .face-recognition-page {
 
 body.face-recognition-mode .instruction-view {
     /* 减小上下内边距，让灰色条向上移动 */
-    padding: 25px 20px;
+    padding: 60px 20px;
