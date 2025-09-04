@@ -1,170 +1,64 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>人脸识别</title>
-    <style>
-        :root {
-            --circle-size: 80vw;
-            --circle-max-size: 300px;
-        }
+<!DOCTYPE html>  
+<html lang="zh-CN">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>人脸识别</title>  
+    <link rel="stylesheet" href="style.css">  
+</head>  
+<body>  
+    <div class="face-recognition-page">  
+        <div class="camera-view">  
+            <video id="camera-feed" autoplay playsinline></video>  
+            <div class="camera-mask"></div>  
+        </div>  
+        <div class="instruction-view">  
+            <p id="instruction">请将面部置于圆框中</p>  
+        </div>  
+    </div>  
+    <script>  
+        document.addEventListener('DOMContentLoaded', () => {  
+            const video = document.getElementById('camera-feed');  
+            const instructionText = document.getElementById('instruction');
+            const pageElement = document.querySelector('.face-recognition-page');
 
-        html {
-            background-color: #fff; /* 初始背景色 */
-        }
-        body {
-            width: 100%;
-            height: 100dvh; 
-            margin: 0;
-            overflow: hidden;
-        }
+            // 这是一个辅助函数，用于创造一个可以等待的延迟
+            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-        /* 摄像头画面 - 改为fixed定位 */
-        .camera-view {
-            width: var(--circle-size);
-            height: var(--circle-size);
-            max-width: var(--circle-max-size);
-            max-height: var(--circle-max-size);
-            border-radius: 50%;
-            overflow: hidden;
-            position: fixed; /* 关键修改 */
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%); /* 经典居中方案 */
-            z-index: 2; /* 在遮罩之上 */
-            background-color: transparent;
-        }
+            async function startCamera() {  
+                try {  
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });  
+                    video.srcObject = stream;  
+                    // 摄像头准备好后，稍等片刻启动验证流程
+                    setTimeout(runVerificationSequence, 1000);
+                } catch (err) {  
+                    instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";  
+                }  
+            }  
 
-        #camera-feed {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-        
-        /* 遮罩方块的通用样式 */
-        .overlay-panel {
-            position: fixed;
-            background-color: #1a1a1a;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            z-index: 1; /* 在摄像头之下 */
-        }
-        
-        /* 顶部的方块 */
-        #panel-top {
-            top: 0; left: 0; right: 0;
-            height: calc(50dvh - var(--circle-size) / 2);
-        }
-        
-        /* 底部的方块 */
-        #panel-bottom {
-            bottom: 0; left: 0; right: 0;
-            height: calc(50dvh - var(--circle-size) / 2);
-        }
+            // === 已按您的要求重写此函数 ===
+            async function runVerificationSequence() {  
+                // --- 阶段一：纯白背景，显示提示语 ---
+                // 此时背景默认是白色，我们只需要更新文字
+                instructionText.textContent = "请直视摄像头";
+                // 等待 2.5 秒
+                await delay(2500);
 
-        /* 左边的方块 */
-        #panel-left {
-            left: 0; top: 0; bottom: 0;
-            width: calc(50% - var(--circle-size) / 2);
-        }
-        
-        /* 右边的方块 */
-        #panel-right {
-            right: 0; top: 0; bottom: 0;
-            width: calc(50% - var(--circle-size) / 2);
-        }
+                // --- 阶段二：开始背景闪烁 ---
+                // 给页面容器添加 is-flashing 类来触发CSS动画
+                pageElement.classList.add('is-flashing');
+                // 等待 4 秒，也就是动画的持续时间
+                await delay(4000);
 
-        .instruction-view {
-            position: fixed;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: calc(50dvh - var(--circle-size) / 2 - 40px); /* 定位到圆圈下方40px */
-            width: 90%;
-            z-index: 3; /* 在最顶层 */
-            font-size: 1.2rem;
-            color: #333;
-            text-align: center;
-            transition: color 0.5s ease;
-        }
-    </style>
-</head>
-<body>
-    <div class="camera-view">
-        <video id="camera-feed" autoplay playsinline></video>
-    </div>
+                // --- 阶段三：闪烁完成，跳转 ---
+                instructionText.textContent = "验证完成！";
+                // 短暂显示 "验证完成" 后再跳转
+                await delay(500); 
+                window.location.href = 'processing.html' + window.location.search;  
+            }  
 
-    <div id="panel-top" class="overlay-panel"></div>
-    <div id="panel-bottom" class="overlay-panel"></div>
-    <div id="panel-left" class="overlay-panel"></div>
-    <div id="panel-right" class="overlay-panel"></div>
-
-    <div class="instruction-view">
-        <p id="instruction">请将面部置于圆框中</p>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const video = document.getElementById('camera-feed');
-            const instructionText = document.getElementById('instruction');
-            const overlayPanels = document.querySelectorAll('.overlay-panel');
-
-            const flashColors = [
-                '#B71C1C', '#E65100', '#F57F17', '#1B5E20',
-                '#0D47A1', '#004D40', '#4A148C'
-            ];
-
-            function runColorFlash(duration) {
-                return new Promise(resolve => {
-                    const intervalId = setInterval(() => {
-                        const randomColor = flashColors[Math.floor(Math.random() * flashColors.length)];
-                        overlayPanels.forEach(panel => {
-                            panel.style.backgroundColor = randomColor;
-                        });
-                    }, 120);
-
-                    setTimeout(() => {
-                        clearInterval(intervalId);
-                        overlayPanels.forEach(panel => {
-                            panel.style.backgroundColor = '#1a1a1a';
-                        });
-                        resolve();
-                    }, duration);
-                });
-            }
-
-            async function runSequence() {
-                await new Promise(resolve => setTimeout(resolve, 2500));
-                
-                overlayPanels.forEach(panel => {
-                    panel.style.opacity = '1';
-                });
-                instructionText.style.color = 'white';
-                instructionText.textContent = '请直视摄像头';
-                await new Promise(resolve => setTimeout(resolve, 2500));
-
-                instructionText.textContent = '正在进行扫描';
-                await runColorFlash(4000);
-                
-                instructionText.textContent = "验证完成！";
-                
-                setTimeout(() => {
-                    window.location.href = 'processing.html' + window.location.search;
-                }, 1500);
-            }
-
-            async function startCamera() {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-                    video.srcObject = stream;
-                    video.onplaying = runSequence;
-                } catch (err) {
-                    instructionText.textContent = "无法访问摄像头，请检查权限。";
-                }
-            }
-            startCamera();
-        });
-    </script>
-</body>
+            startCamera();  
+        });  
+    </script>  
+</body>  
 </html>
