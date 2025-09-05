@@ -4,37 +4,149 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>人脸识别</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 基础样式 */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a1a2e; /* 初始背景色 */
+            position: relative;
+        }
+        
+        /* 添加闪烁动画效果 */
+        @keyframes backgroundFlash {
+            0% { background-color: #1a1a2e; }
+            25% { background-color: #16213e; }
+            50% { background-color: #0f3460; }
+            75% { background-color: #16213e; }
+            100% { background-color: #1a1a2e; }
+        }
+        
+        /* 创建闪烁背景层 - 只在圆框外部 */
+        .flash-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            animation: backgroundFlash 4s infinite;
+            z-index: 1;
+            /* 使用遮罩创建圆形透明区域 */
+            mask: radial-gradient(circle at center, transparent 150px, black 150px);
+            -webkit-mask: radial-gradient(circle at center, transparent 150px, black 150px);
+        }
+        
+        /* 人脸识别页面布局 */
+        .face-recognition-page {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+            z-index: 3; /* 确保内容在闪烁层之上 */
+        }
+        
+        /* 摄像头视图样式 */
+        .camera-view {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+            border-radius: 50%;
+            overflow: hidden;
+            z-index: 2;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); /* 创建外部遮罩 */
+        }
+        
+        #camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* 镜像翻转，使体验更自然 */
+            background-color: #000; /* 摄像头加载前的背景色 */
+        }
+        
+        /* 指示文本样式 */
+        .instruction-view {
+            margin-top: 30px;
+            position: relative;
+            z-index: 3;
+        }
+        
+        #instruction {
+            color: white;
+            font-size: 18px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            display: inline-block;
+        }
+        
+        /* 错误消息样式 */
+        .error-message {
+            color: #ff6b6b;
+            font-size: 16px;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            display: inline-block;
+            position: relative;
+            z-index: 3;
+        }
+    </style>
 </head>
 <body>
+    <!-- 闪烁背景层 - 只在圆框外部 -->
+    <div class="flash-background"></div>
+    
     <div class="face-recognition-page">
         <div class="camera-view">
             <video id="camera-feed" autoplay playsinline></video>
-            <div class="camera-mask"></div>
         </div>
         <div class="instruction-view">
             <p id="instruction">请将面部置于圆框中</p>
         </div>
+        <div id="error-message" class="error-message" style="display: none;"></div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            
-            // --- 修改点 ---
-            // 页面加载后，立刻给 body 添加class，触发CSS中的全屏样式
-            document.body.classList.add('face-recognition-mode');
-            // --- 修改结束 ---
-
             const video = document.getElementById('camera-feed');
             const instructionText = document.getElementById('instruction');
+            const errorMessage = document.getElementById('error-message');
             
             async function startCamera() {
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            facingMode: 'user',
+                            width: { ideal: 300 },
+                            height: { ideal: 300 }
+                        }, 
+                        audio: false 
+                    });
+                    
                     video.srcObject = stream;
-                    setTimeout(runVerificationSequence, 1000); 
+                    
+                    // 确保视频加载后保持正确比例
+                    video.addEventListener('loadeddata', () => {
+                        setTimeout(runVerificationSequence, 1000);
+                    });
                 } catch (err) {
-                    instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";
+                    instructionText.style.display = 'none';
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = "无法访问摄像头，请检查权限并刷新页面。";
+                    console.error("摄像头访问错误:", err);
+                    
+                    // 如果摄像头无法访问，停止背景闪烁
+                    document.querySelector('.flash-background').style.animation = 'none';
                 }
             }
 
@@ -50,13 +162,17 @@
                 const actions = ['请眨眨眼', '请摇摇头', '请张张嘴'];
                 const shuffledActions = actions.sort(() => 0.5 - Math.random());
                 const tasks = shuffledActions.slice(0, 2);
+                
                 for (const task of tasks) {
                     await runTask(task);
                 }
+                
                 instructionText.textContent = "验证完成！";
                 
                 setTimeout(() => {
-                    window.location.href = 'processing.html' + window.location.search;
+                    // 模拟跳转，实际使用时取消注释下一行
+                    // window.location.href = 'processing.html' + window.location.search;
+                    alert("验证完成！将跳转到处理页面");
                 }, 1500);
             }
 
