@@ -13,31 +13,33 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #000;
+            background-color: #0a0a1a;
             margin: 0;
             padding: 0;
             height: 100vh;
             overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
         /* 人脸识别页面容器 */
-        .face-recognition-page {
+        .face-recognition-container {
             width: 100%;
             height: 100vh;
+            position: relative;
             display: flex;
             flex-direction: column;
-            background-color: #000;
-            position: relative;
+            justify-content: center;
+            align-items: center;
         }
         
         /* 摄像头视图 */
         .camera-view {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             position: relative;
-            overflow: hidden;
+            width: 300px;
+            height: 300px;
+            z-index: 10;
         }
         
         #camera-feed {
@@ -45,35 +47,22 @@
             height: 100%;
             object-fit: cover;
             transform: scaleX(-1);
-        }
-        
-        /* 圆形遮罩 */
-        .camera-mask {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 300px;
-            height: 300px;
             border-radius: 50%;
             border: 3px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 0 0 100vh rgba(0, 0, 0, 0.7);
+        }
+        
+        /* 使用伪元素创建外部遮罩 */
+        .camera-view::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 5;
+            clip-path: polygon(0% 0%, 0% 100%, 50% 100%, 50% 50%, 50% 50%, 50% 100%, 100% 100%, 100% 0%);
             pointer-events: none;
-            z-index: 10;
-        }
-        
-        /* 指示区域 */
-        .instruction-view {
-            padding: 30px 20px;
-            text-align: center;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 15;
-        }
-        
-        #instruction {
-            font-size: 18px;
-            color: white;
-            margin-bottom: 10px;
         }
         
         /* 闪烁动画 */
@@ -85,16 +74,35 @@
             100% { background-color: #0a0a1a; }
         }
         
+        /* 闪烁层 - 只在圆框外部 */
         .flash-layer {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 5;
+            width: 100vw;
+            height: 100vh;
+            z-index: 3;
             pointer-events: none;
             animation: rapidFlash 0.5s infinite;
             display: none;
+            /* 使用clip-path创建圆形透明区域 */
+            clip-path: circle(30% at 50% 50%);
+        }
+        
+        /* 指示区域 */
+        .instruction-view {
+            margin-top: 30px;
+            text-align: center;
+            z-index: 15;
+            position: relative;
+        }
+        
+        #instruction {
+            font-size: 18px;
+            color: white;
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
         }
         
         /* 错误消息 */
@@ -110,14 +118,13 @@
     </style>
 </head>
 <body>
-    <div class="face-recognition-page">
-        <!-- 闪烁层 -->
+    <div class="face-recognition-container">
+        <!-- 闪烁层 - 只在圆框外部 -->
         <div class="flash-layer" id="flash-layer"></div>
         
         <!-- 摄像头区域 -->
         <div class="camera-view">
             <video id="camera-feed" autoplay playsinline></video>
-            <div class="camera-mask"></div>
         </div>
         
         <!-- 指示区域 -->
@@ -144,7 +151,8 @@
                     console.log("闪烁完成，准备跳转");
                     flashLayer.style.display = 'none';
                     // 实际跳转代码
-                    window.location.href = 'processing.html' + window.location.search;
+                    // window.location.href = 'processing.html' + window.location.search;
+                    alert("验证完成！将跳转到处理页面"); // 演示用
                 }, 5000);
             }
             
