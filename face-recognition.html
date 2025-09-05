@@ -3,72 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>人脸识别</title>
+    <title>人脸识别验证</title>
     <style>
         /* 基础样式 */
-        body {
+        * {
             margin: 0;
             padding: 0;
-            font-family: 'Arial', sans-serif;
-            height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
             overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #1a1a2e; /* 初始背景色 */
+            background-color: #0a0a1a;
             position: relative;
         }
         
-        /* 添加闪烁动画效果 */
-        @keyframes backgroundFlash {
-            0% { background-color: #1a1a2e; }
-            25% { background-color: #16213e; }
-            50% { background-color: #0f3460; }
-            75% { background-color: #16213e; }
-            100% { background-color: #1a1a2e; }
+        /* 快速闪烁动画效果 */
+        @keyframes rapidFlash {
+            0% { background-color: #0a0a1a; }
+            10% { background-color: #2a2a5a; }
+            20% { background-color: #0a0a1a; }
+            30% { background-color: #3a3a7a; }
+            40% { background-color: #0a0a1a; }
+            50% { background-color: #4a4a9a; }
+            60% { background-color: #0a0a1a; }
+            70% { background-color: #3a3a7a; }
+            80% { background-color: #0a0a1a; }
+            90% { background-color: #2a2a5a; }
+            100% { background-color: #0a0a1a; }
         }
         
-        /* 创建闪烁背景层 - 只在圆框外部 */
-        .flash-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            animation: backgroundFlash 4s infinite;
-            z-index: 1;
-            /* 使用遮罩创建圆形透明区域 */
-            mask: radial-gradient(circle at center, transparent 150px, black 150px);
-            -webkit-mask: radial-gradient(circle at center, transparent 150px, black 150px);
-        }
-        
-        /* 人脸识别页面布局 */
+        /* 主容器 */
         .face-recognition-page {
+            position: relative;
             width: 100%;
             max-width: 400px;
             text-align: center;
-            position: relative;
-            z-index: 3; /* 确保内容在闪烁层之上 */
+            z-index: 10;
         }
         
-        /* 摄像头视图样式 */
-        .camera-view {
+        /* 摄像头容器 - 使用传统方法创建圆形遮罩 */
+        .camera-container {
             position: relative;
             width: 300px;
             height: 300px;
             margin: 0 auto;
+        }
+        
+        .camera-view {
+            position: relative;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
             overflow: hidden;
             z-index: 2;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); /* 创建外部遮罩 */
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5);
         }
         
         #camera-feed {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* 镜像翻转，使体验更自然 */
-            background-color: #000; /* 摄像头加载前的背景色 */
+            transform: scaleX(-1);
+            background-color: #000;
+        }
+        
+        /* 闪烁背景层 */
+        .flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            animation: rapidFlash 1s infinite;
+            /* 使用径向渐变创建圆形透明区域 */
+            background: radial-gradient(circle at center, transparent 150px, rgba(0, 0, 0, 0.8) 151px);
         }
         
         /* 指示文本样式 */
@@ -103,12 +124,14 @@
     </style>
 </head>
 <body>
-    <!-- 闪烁背景层 - 只在圆框外部 -->
-    <div class="flash-background"></div>
+    <!-- 闪烁覆盖层 -->
+    <div class="flash-overlay" id="flash-overlay"></div>
     
     <div class="face-recognition-page">
-        <div class="camera-view">
-            <video id="camera-feed" autoplay playsinline></video>
+        <div class="camera-container">
+            <div class="camera-view">
+                <video id="camera-feed" autoplay playsinline></video>
+            </div>
         </div>
         <div class="instruction-view">
             <p id="instruction">请将面部置于圆框中</p>
@@ -121,6 +144,18 @@
             const video = document.getElementById('camera-feed');
             const instructionText = document.getElementById('instruction');
             const errorMessage = document.getElementById('error-message');
+            const flashOverlay = document.getElementById('flash-overlay');
+            
+            // 启动快速闪烁效果
+            function startFlashEffect() {
+                // 5秒后停止闪烁并跳转
+                setTimeout(() => {
+                    flashOverlay.style.animation = 'none';
+                    // 实际使用时取消注释下一行
+                    // window.location.href = 'processing.html' + window.location.search;
+                    console.log("5秒闪烁完成，准备跳转");
+                }, 5000);
+            }
             
             async function startCamera() {
                 try {
@@ -135,9 +170,10 @@
                     
                     video.srcObject = stream;
                     
-                    // 确保视频加载后保持正确比例
+                    // 摄像头启动后立即开始闪烁效果
                     video.addEventListener('loadeddata', () => {
-                        setTimeout(runVerificationSequence, 1000);
+                        // 短暂延迟后开始闪烁
+                        setTimeout(startFlashEffect, 500);
                     });
                 } catch (err) {
                     instructionText.style.display = 'none';
@@ -145,35 +181,10 @@
                     errorMessage.textContent = "无法访问摄像头，请检查权限并刷新页面。";
                     console.error("摄像头访问错误:", err);
                     
-                    // 如果摄像头无法访问，停止背景闪烁
-                    document.querySelector('.flash-background').style.animation = 'none';
+                    // 如果摄像头无法访问，停止闪烁
+                    flashOverlay.style.animation = 'none';
+                    flashOverlay.style.background = 'rgba(0, 0, 0, 0.8)';
                 }
-            }
-
-            function runTask(taskName) {
-                return new Promise(resolve => {
-                    instructionText.textContent = taskName;
-                    let duration = Math.floor(Math.random() * 3) + 2; // 随机2-4秒
-                    setTimeout(resolve, duration * 1000);
-                });
-            }
-
-            async function runVerificationSequence() {
-                const actions = ['请眨眨眼', '请摇摇头', '请张张嘴'];
-                const shuffledActions = actions.sort(() => 0.5 - Math.random());
-                const tasks = shuffledActions.slice(0, 2);
-                
-                for (const task of tasks) {
-                    await runTask(task);
-                }
-                
-                instructionText.textContent = "验证完成！";
-                
-                setTimeout(() => {
-                    // 模拟跳转，实际使用时取消注释下一行
-                    // window.location.href = 'processing.html' + window.location.search;
-                    alert("验证完成！将跳转到处理页面");
-                }, 1500);
             }
 
             startCamera();
