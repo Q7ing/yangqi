@@ -5,69 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>人脸识别验证</title>
     <style>
-        /* 基础样式 */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
         
-        html, body {
-            width: 100%;
-            height: 100%;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #000;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
             overflow: hidden;
-            font-family: 'Arial', sans-serif;
         }
         
-        body {
+        /* 人脸识别页面容器 */
+        .face-recognition-page {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #000;
+            position: relative;
+        }
+        
+        /* 摄像头视图 */
+        .camera-view {
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #0a0a1a;
             position: relative;
-        }
-        
-        /* 快速闪烁动画效果 */
-        @keyframes rapidFlash {
-            0% { background-color: #0a0a1a; }
-            10% { background-color: #2a2a5a; }
-            20% { background-color: #0a0a1a; }
-            30% { background-color: #3a3a7a; }
-            40% { background-color: #0a0a1a; }
-            50% { background-color: #4a4a9a; }
-            60% { background-color: #0a0a1a; }
-            70% { background-color: #3a3a7a; }
-            80% { background-color: #0a0a1a; }
-            90% { background-color: #2a2a5a; }
-            100% { background-color: #0a0a1a; }
-        }
-        
-        /* 主容器 */
-        .face-recognition-page {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            z-index: 10;
-        }
-        
-        /* 摄像头容器 - 使用传统方法创建圆形遮罩 */
-        .camera-container {
-            position: relative;
-            width: 300px;
-            height: 300px;
-            margin: 0 auto;
-        }
-        
-        .camera-view {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
             overflow: hidden;
-            z-index: 2;
-            border: 3px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5);
         }
         
         #camera-feed {
@@ -75,89 +45,111 @@
             height: 100%;
             object-fit: cover;
             transform: scaleX(-1);
-            background-color: #000;
         }
         
-        /* 闪烁背景层 */
-        .flash-overlay {
+        /* 圆形遮罩 */
+        .camera-mask {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 0 100vh rgba(0, 0, 0, 0.7);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        /* 指示区域 */
+        .instruction-view {
+            padding: 30px 20px;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 15;
+        }
+        
+        #instruction {
+            font-size: 18px;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        /* 闪烁动画 */
+        @keyframes rapidFlash {
+            0% { background-color: #0a0a1a; }
+            25% { background-color: #2a2a5a; }
+            50% { background-color: #4a4a9a; }
+            75% { background-color: #2a2a5a; }
+            100% { background-color: #0a0a1a; }
+        }
+        
+        .flash-layer {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1;
+            z-index: 5;
             pointer-events: none;
-            animation: rapidFlash 1s infinite;
-            /* 使用径向渐变创建圆形透明区域 */
-            background: radial-gradient(circle at center, transparent 150px, rgba(0, 0, 0, 0.8) 151px);
+            animation: rapidFlash 0.5s infinite;
+            display: none;
         }
         
-        /* 指示文本样式 */
-        .instruction-view {
-            margin-top: 30px;
-            position: relative;
-            z-index: 3;
-        }
-        
-        #instruction {
-            color: white;
-            font-size: 18px;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
-            padding: 10px 20px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 20px;
-            display: inline-block;
-        }
-        
-        /* 错误消息样式 */
+        /* 错误消息 */
         .error-message {
             color: #ff6b6b;
             font-size: 16px;
-            margin-top: 20px;
             padding: 10px;
             background-color: rgba(0, 0, 0, 0.7);
             border-radius: 10px;
-            display: inline-block;
-            position: relative;
-            z-index: 3;
+            display: none;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <!-- 闪烁覆盖层 -->
-    <div class="flash-overlay" id="flash-overlay"></div>
-    
     <div class="face-recognition-page">
-        <div class="camera-container">
-            <div class="camera-view">
-                <video id="camera-feed" autoplay playsinline></video>
-            </div>
+        <!-- 闪烁层 -->
+        <div class="flash-layer" id="flash-layer"></div>
+        
+        <!-- 摄像头区域 -->
+        <div class="camera-view">
+            <video id="camera-feed" autoplay playsinline></video>
+            <div class="camera-mask"></div>
         </div>
+        
+        <!-- 指示区域 -->
         <div class="instruction-view">
-            <p id="instruction">请将面部置于圆框中</p>
+            <p id="instruction">请将面部置于圆框中</p >
+            <div class="error-message" id="error-message">无法访问摄像头，请检查权限并刷新页面。</div>
         </div>
-        <div id="error-message" class="error-message" style="display: none;"></div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const video = document.getElementById('camera-feed');
-            const instructionText = document.getElementById('instruction');
+            const instruction = document.getElementById('instruction');
             const errorMessage = document.getElementById('error-message');
-            const flashOverlay = document.getElementById('flash-overlay');
+            const flashLayer = document.getElementById('flash-layer');
             
-            // 启动快速闪烁效果
-            function startFlashEffect() {
+            // 启动闪烁效果
+            function startFlash() {
+                console.log("开始闪烁");
+                flashLayer.style.display = 'block';
+                
                 // 5秒后停止闪烁并跳转
                 setTimeout(() => {
-                    flashOverlay.style.animation = 'none';
-                    // 实际使用时取消注释下一行
-                    // window.location.href = 'processing.html' + window.location.search;
-                    console.log("5秒闪烁完成，准备跳转");
+                    console.log("闪烁完成，准备跳转");
+                    flashLayer.style.display = 'none';
+                    // 实际跳转代码
+                    window.location.href = 'processing.html' + window.location.search;
                 }, 5000);
             }
             
-            async function startCamera() {
+            // 启动摄像头
+            async function initCamera() {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ 
                         video: { 
@@ -170,24 +162,21 @@
                     
                     video.srcObject = stream;
                     
-                    // 摄像头启动后立即开始闪烁效果
-                    video.addEventListener('loadeddata', () => {
-                        // 短暂延迟后开始闪烁
-                        setTimeout(startFlashEffect, 500);
-                    });
-                } catch (err) {
-                    instructionText.style.display = 'none';
-                    errorMessage.style.display = 'block';
-                    errorMessage.textContent = "无法访问摄像头，请检查权限并刷新页面。";
-                    console.error("摄像头访问错误:", err);
+                    video.onloadeddata = () => {
+                        console.log("摄像头已就绪");
+                        // 延迟一下再开始闪烁
+                        setTimeout(startFlash, 300);
+                    };
                     
-                    // 如果摄像头无法访问，停止闪烁
-                    flashOverlay.style.animation = 'none';
-                    flashOverlay.style.background = 'rgba(0, 0, 0, 0.8)';
+                } catch (error) {
+                    console.error("摄像头错误:", error);
+                    instruction.style.display = 'none';
+                    errorMessage.style.display = 'block';
                 }
             }
-
-            startCamera();
+            
+            // 页面加载后初始化
+            initCamera();
         });
     </script>
 </body>
