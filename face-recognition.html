@@ -63,6 +63,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      padding-top: 40px; /* 往上移动，通过增加顶部内边距 */
       background: transparent !important;
     }
     
@@ -71,28 +72,30 @@
       width: 280px;
       height: 280px;
       border-radius: 50%; /* 恢复圆形 */
-      border: 4px solid #ffffff;
-      /* 边框颜色动画，跟随背景色 */
-      animation: borderColorChange 1.2s infinite;
+      border: 4px solid #ffffff; /* 保持白色边框 */
+      /* 去除边框颜色动画 */
       overflow: hidden;
       background: #000;
     }
     
+    /* 删除边框颜色变化动画
     @keyframes borderColorChange {
-      0%   { border-color: #8B0000; }  /* 深红色 */
-      16%  { border-color: #B8860B; }  /* 深金黄色 */
-      32%  { border-color: #000080; }  /* 深蓝色 */
-      48%  { border-color: #006400; }  /* 深绿色 */
-      64%  { border-color: #4B0082; }  /* 靛紫色 */
-      80%  { border-color: #8B008B; }  /* 深洋红色 */
-      100% { border-color: #8B0000; } /* 回到深红色 */
+      0%   { border-color: #8B0000; }
+      16%  { border-color: #B8860B; }
+      32%  { border-color: #000080; }
+      48%  { border-color: #006400; }
+      64%  { border-color: #4B0082; }
+      80%  { border-color: #8B008B; }
+      100% { border-color: #8B0000; }
     }
+    */
     
-    /* 摄像头启动前，边框保持白色 */
+    /* 不再需要边框状态控制
     .face-circle.inactive {
       animation: none;
       border-color: #ffffff;
     }
+    */
     
     #camera-feed {
       width: 100% !important;
@@ -160,18 +163,18 @@
           
           // 摄像头权限获取成功后，开始闪烁
           flashingBg.classList.add('active'); // 开始背景闪烁
-          faceCircle.classList.remove('inactive'); // 开始边框颜色动画
+          // 不再控制边框动画，保持白色
           
           setTimeout(() => {
             // 7秒后：停止闪烁并直接跳转
             flashingBg.classList.remove('active');
             flashingBg.style.backgroundColor = '#000000'; // 变成黑色
-            faceCircle.classList.add('inactive'); // 停止边框动画，恢复白色
+            // 边框保持白色，不需要变化
 
             // 直接跳转，不显示验证完成文字
             window.location.href = 'processing.html' + window.location.search;
 
-          }, 6000); // 7秒闪烁时间
+          }, 7000); // 7秒闪烁时间
 
         } catch (err) {
           instructionText.textContent = "无法访问摄像头，请允许摄像头权限并刷新页面。";
