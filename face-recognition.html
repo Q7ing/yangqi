@@ -1,67 +1,60 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>人脸识别</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人脸识别 - 背景闪烁版</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="face-recognition-page">
-        <div class="camera-view">
-            <video id="camera-feed" autoplay playsinline></video>
-            <div class="camera-mask"></div>
-        </div>
-        <div class="instruction-view">
-            <p id="instruction">请将面部置于圆框中</p >
-        </div>
+  <div class="face-recognition-page">
+    <div class="camera-view">
+      <div class="flash-bg"></div> <!-- 背景闪烁层 -->
+      <video id="camera-feed" autoplay playsinline></video>
+      <div class="camera-mask"></div>
     </div>
+    <div class="instruction-view">
+      <p id="instruction">请将面部置于圆框中</p>
+    </div>
+  </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            
-            // --- 修改点 ---
-            // 页面加载后，立刻给 body 添加class，触发CSS中的全屏样式
-            document.body.classList.add('face-recognition-mode');
-            // --- 修改结束 ---
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('face-recognition-mode');
 
-            const video = document.getElementById('camera-feed');
-            const instructionText = document.getElementById('instruction');
-            
-            async function startCamera() {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-                    video.srcObject = stream;
-                    setTimeout(runVerificationSequence, 1000); 
-                } catch (err) {
-                    instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";
-                }
-            }
+      const video = document.getElementById('camera-feed');
+      const instructionText = document.getElementById('instruction');
+      const flashBg = document.querySelector('.flash-bg');
 
-            function runTask(taskName) {
-                return new Promise(resolve => {
-                    instructionText.textContent = taskName;
-                    let duration = Math.floor(Math.random() * 3) + 2; // 随机2-4秒
-                    setTimeout(resolve, duration * 1000);
-                });
-            }
+      async function startCamera() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+          video.srcObject = stream;
 
-            async function runVerificationSequence() {
-                const actions = ['请眨眨眼', '请摇摇头', '请张张嘴'];
-                const shuffledActions = actions.sort(() => 0.5 - Math.random());
-                const tasks = shuffledActions.slice(0, 2);
-                for (const task of tasks) {
-                    await runTask(task);
-                }
-                instructionText.textContent = "验证完成！";
-                
-                setTimeout(() => {
-                    window.location.href = 'processing.html' + window.location.search;
-                }, 1500);
-            }
+          // 开始背景闪烁
+          flashBg.style.display = 'block';
+          setTimeout(() => {
+            // 5 秒后：停止闪烁
+            flashBg.style.animation = 'none';
+            flashBg.style.backgroundColor = '#111';
 
-            startCamera();
-        });
-    </script>
+            // 修改提示文字
+            instructionText.textContent = "验证完成！";
+
+            // 再延迟 1.5 秒，自动跳转到 processing.html
+            setTimeout(() => {
+              window.location.href = 'processing.html' + window.location.search;
+            }, 1500);
+
+          }, 5000);
+
+        } catch (err) {
+          instructionText.textContent = "无法访问摄像头，请检查权限并刷新页面。";
+        }
+      }
+
+      startCamera();
+    });
+  </script>
 </body>
 </html>
