@@ -58,12 +58,11 @@
     }
     
     .camera-view {
-      flex: 1;
-      position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding-top: 80px; /* 从40px增加到80px，继续往上移 */
+      flex: 1 !important;
+      position: relative !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: flex-start !important; /* 改为flex-start然后用margin-top */
       background: transparent !important;
     }
     
@@ -76,6 +75,7 @@
       /* 去除边框颜色动画 */
       overflow: hidden;
       background: #000;
+      margin-top: 80px; /* 使用margin-top替代padding-top */
     }
     
     /* 删除边框颜色变化动画
