@@ -177,7 +177,7 @@
           }, 7000); // 7秒闪烁时间
 
         } catch (err) {
-          instructionText.textContent = "无法访问摄像头，请允许摄像头权限并刷新页面。";
+          instructionText.textContent = "无法访问摄像头，请刷新页面。";
           // 摄像头权限被拒绝，设置为黑色，但不跳转
           flashingBg.style.backgroundColor = '#000000';
           // 不跳转，让用户手动刷新页面重新授权
