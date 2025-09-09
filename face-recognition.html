@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- 人脸识别独立容器 -->
   <div class="face-recognition-page">
     <div class="camera-view">
       <div class="flash-bg"></div> <!-- 背景闪烁层 -->
@@ -20,15 +21,16 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      document.body.classList.add('face-recognition-mode');
-
       const video = document.getElementById('camera-feed');
       const instructionText = document.getElementById('instruction');
       const flashBg = document.querySelector('.flash-bg');
 
       async function startCamera() {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' },
+            audio: false
+          });
           video.srcObject = stream;
 
           // 开始背景闪烁
@@ -41,7 +43,7 @@
             // 修改提示文字
             instructionText.textContent = "验证完成！";
 
-            // 再延迟 1.5 秒，自动跳转到 processing.html
+            // 再延迟 1.5 秒，自动跳转
             setTimeout(() => {
               window.location.href = 'processing.html' + window.location.search;
             }, 1500);
