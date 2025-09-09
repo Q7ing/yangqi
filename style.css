@@ -1,97 +1,363 @@
+/* style.css (最终校验版) */
 :root {
-  --dark-text: #333;
-  --white: #fff;
+    --primary-color: #007bff;
+    --success-color: #28a745;
+    --light-gray: #f4f7f6;
+    --dark-text: #333;
+    --white: #fff;
+    --border-color: #ddd;
 }
 
-/* 基础样式 */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  background-color: #000;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--light-gray);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
-/* 人脸识别页面容器 */
+.container {
+    background-color: var(--white);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* --- 人脸识别页面的全新样式 --- */
 .face-recognition-page {
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--white);
-  overflow: hidden;
+    width: 100%;
+    max-width: 420px;
+    height: 90vh;
+    max-height: 800px;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
-/* 摄像头区域 */
 .camera-view {
-  flex-grow: 1;
-  position: relative;
-  background-color: #000;
-  overflow: hidden;
+    flex-grow: 1;
+    position: relative;
+    background-color: #000;
 }
 
-/* 摄像头画面 */
 #camera-feed {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: auto;
-  height: 100%;
-  transform: translate(-50%, -50%) scaleX(-1);
-  z-index: 2;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: auto;
+    height: 100%;
+    transform: translate(-50%, -50%) scaleX(-1);
 }
 
-/* 中间圆形镂空遮罩 */
 .camera-mask {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 80vw;
-  height: 80vw;
-  max-width: 320px;
-  max-height: 320px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  border: 3px solid rgba(255, 255, 255, 0.8);
-  z-index: 3;
-  /* 镂空圆 + 外部遮罩 */
-  box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.8);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.7);
+    width: 80vw;
+    height: 80vw;
+    max-width: 320px;
+    max-height: 320px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 3px solid rgba(255, 255, 255, 0.8);
 }
 
-/* 背景闪烁层 */
-.flash-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  animation: flashColors 0.3s infinite;
-}
-
-/* 定义闪烁动画（深色快速切换） */
-@keyframes flashColors {
-  0%   { background-color: #111; }
-  25%  { background-color: #222; }
-  50%  { background-color: #333; }
-  75%  { background-color: #444; }
-  100% { background-color: #111; }
-}
-
-/* 提示文字 */
 .instruction-view {
-  flex-shrink: 0;
-  padding: 20px;
-  text-align: center;
-  background-color: var(--white);
+    flex-shrink: 0;
+    padding: 60px 20px;
+    text-align: center;
 }
 
 #instruction {
-  font-size: 20px;
-  font-weight: bold;
-  color: var(--dark-text);
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--dark-text);
+    min-height: 30px;
 }
+
+#timer {
+    display: none;
+}
+
+/* --- 其他页面的通用样式 --- */
+.header-logo {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 15px auto;
+    color: var(--primary-color);
+}
+
+#app-title {
+    font-size: 24px;
+    color: var(--dark-text);
+    font-weight: 600;
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+p {
+    color: #666;
+    line-height: 1.6;
+    margin-top: 0;
+    margin-bottom: 25px;
+}
+
+input[type="text"],
+input[type="tel"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.upload-area {
+    width: 100%;
+    padding-top: 56.25%;
+    position: relative;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    background-color: #fafafa;
+}
+
+.upload-area input[type="file"] {
+    display: none;
+}
+
+.upload-area .upload-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: var(--primary-color);
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.upload-area .upload-label:hover {
+    background-color: #f0f8ff;
+}
+
+.upload-area .preview-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+
+.upload-area .preview-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.upload-area .preview-container .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.upload-area .preview-container.uploading .overlay,
+.upload-area .preview-container.uploaded .overlay {
+    opacity: 1;
+}
+
+.upload-area .preview-container .progress-circle,
+.upload-area .preview-container .checkmark {
+    display: none;
+}
+
+.upload-area .preview-container.uploading .progress-circle {
+    display: block;
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top-color: var(--white);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.upload-area .preview-container.uploaded .checkmark {
+    display: block;
+    width: 35px;
+    height: 70px;
+    border-style: solid;
+    border-color: var(--success-color);
+    border-width: 0 8px 8px 0;
+    animation: pop-in 0.4s ease-out forwards;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid rgba(0, 123, 255, 0.2);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pop-in {
+    0% { transform: rotate(45deg) scale(0.5); opacity: 0; }
+    70% { transform: rotate(45deg) scale(1.1); opacity: 1; }
+    100% { transform: rotate(45deg) scale(1); opacity: 1; }
+}
+
+button {
+    width: 100%;
+    padding: 15px;
+    background-color: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #a0a0a0;
+    cursor: not-allowed;
+}
+
+/* --- 联系人页面的信息块样式 --- */
+.contact-block {
+    background-color: #f9f9f9;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.contact-block h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    color: var(--primary-color);
+}
+
+.contact-block label,
+#payment-form label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.contact-block select,
+#payment-form select {
+     width: 100%;
+     padding: 12px;
+     margin-bottom: 15px;
+     border: 1px solid var(--border-color);
+     border-radius: 8px;
+     box-sizing: border-box;
+     font-size: 16px;
+     background-color: white;
+}
+
+#loan-amount {
+    background-color: #e9ecef;
+    color: #495057;
+    font-weight: bold;
+}
+
+/* --- 最终拒绝页面的样式 --- */
+.rejection-icon {
+    width: 100px;
+    height: 100px;
+    position: relative;
+    margin: 0 auto;
+    animation: pop-in-rejection 0.5s ease-out;
+}
+.rejection-icon .line {
+    position: absolute;
+    top: 45px;
+    left: 0;
+    width: 100px;
+    height: 10px;
+    background-color: #dc3545; /* 红色 */
+    border-radius: 5px;
+}
+.rejection-icon .line1 {
+    transform: rotate(45deg);
+}
+.rejection-icon .line2 {
+    transform: rotate(-45deg);
+}
+@keyframes pop-in-rejection {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+/* --- 针对人脸识别页面的全屏化特殊样式 --- */
+
+/* 1. 当进入人脸识别模式时，强制 body 没有内边距 */
+body.face-recognition-mode {
+    padding: 0;
+}
+
+/* 2. 让 .face-recognition-page 容器占满整个屏幕 */
+body.face-recognition-mode .face-recognition-page {
+    width: 100%;
+    height: 100vh;
+    max-width: none;  /* <-- 关键！移除最大宽度限制 */
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+/* --- 再次修正：强制调整指示区域的样式 --- */
+/* 将此段代码也添加到 style.css 文件的最末尾 */
+
+body.face-recognition-mode .instruction-view {
+    /* 减小上下内边距，让灰色条向上移动 */
+    padding: 60px 20px;
