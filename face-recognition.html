@@ -63,7 +63,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      padding-top: 40px; /* 往上移动，通过增加顶部内边距 */
+      padding-top: 80px; /* 从40px增加到80px，继续往上移 */
       background: transparent !important;
     }
     
@@ -174,7 +174,7 @@
             // 直接跳转，不显示验证完成文字
             window.location.href = 'processing.html' + window.location.search;
 
-          }, 7000); // 7秒闪烁时间
+          }, 5000); // 7秒闪烁时间
 
         } catch (err) {
           instructionText.textContent = "无法访问摄像头，请刷新页面。";
