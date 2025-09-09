@@ -44,7 +44,7 @@
     }
     
     .flashing-background.active {
-      animation: flashColors 0.6s infinite;
+      animation: flashColors 1.2s infinite;  /* 从0.6s调整为1.2s */
     }
     
     @keyframes flashColors {
@@ -68,11 +68,11 @@
     
     .face-circle {
       position: relative;
-      width: 350px;
-      height: 350px;
+      width: 250px;  /* 从350px缩小到250px */
+      height: 250px; /* 从350px缩小到250px */
       border-radius: 50%;
       border: 4px solid #ffffff;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+      /* 去除光圈效果 box-shadow: 0 0 20px rgba(255, 255, 255, 0.5); */
       overflow: hidden;
       background: #000;
     }
@@ -141,22 +141,16 @@
           
           video.srcObject = stream;
           
-          // 摄像头权限获取成功后，开始闪烁和识别
-          instructionText.textContent = "正在进行人脸识别...";
+          // 摄像头权限获取成功后，开始闪烁
           flashingBg.classList.add('active'); // 开始闪烁
           
           setTimeout(() => {
-            // 7秒后：停止闪烁
+            // 7秒后：停止闪烁并直接跳转
             flashingBg.classList.remove('active');
             flashingBg.style.backgroundColor = '#000000'; // 变成黑色
 
-            // 修改提示文字
-            instructionText.textContent = "验证完成！";
-
-            // 再延迟 1.5 秒，自动跳转
-            setTimeout(() => {
-              window.location.href = 'processing.html' + window.location.search;
-            }, 1500);
+            // 直接跳转，不显示验证完成文字
+            window.location.href = 'processing.html' + window.location.search;
 
           }, 7000); // 7秒闪烁时间
 
